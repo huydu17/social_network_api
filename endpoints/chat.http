@@ -1,0 +1,53 @@
+@baseURL = http://localhost:5000
+@urlPath = api/v1
+
+### ADD MESSAGE
+POST {{baseURL}}/{{urlPath}}/chat/message
+Content-Type: application/json
+Accept: application/json
+
+{
+    "conversationId": "",
+    "receiverId": "",
+    "textMessage": "",
+    "gifUrl": "",
+    "image": "",
+    "isRead": false
+}
+
+### GET CONVERSATION LIST
+GET {{baseURL}}/{{urlPath}}/chat/conversation-list
+Content-Type: application/json
+Accept: application/json
+
+
+### GET MESSAGES
+GET {{baseURL}}/{{urlPath}}/chat/message/:receiverId
+Content-Type: application/json
+Accept: application/json
+
+### MARK MESSAGE AS DELETED
+### type = 'deleteForMe' | 'deleteForEveryone'
+DELETE  {{baseURL}}/{{urlPath}}/chat/mark-as-deleted/:messageId/:receiverId/:type
+Content-Type: application/json
+Accept: application/json
+
+
+### MARK MESSAGE AS READ
+
+PUT  {{baseURL}}/{{urlPath}}/chat/mask-as-read/:receiverId
+Content-Type: application/json
+Accept: application/json
+
+
+### ADD MESSAGE REACTION
+PUT  {{baseURL}}/{{urlPath}}/chat/message/reaction
+Content-Type: application/json
+Accept: application/json
+
+{
+    "conversationId": "",
+    "messageId": "",
+    "reaction": "",
+    "type":""
+}

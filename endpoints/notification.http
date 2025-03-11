@@ -1,0 +1,18 @@
+@baseURL = http://localhost:5000
+@urlPath = api/v1
+
+### GET NOTIFICATIONS
+GET {{baseURL}}/{{urlPath}}/notifications
+Content-Type: application/json
+Accept: application/json
+
+### UPDATE NOTIFICATION
+PUT {{baseURL}}/{{urlPath}}/notifications/:notificationId
+Content-Type: application/json
+Accept: application/json
+
+### DELETE NOTIFICATION
+DELETE  {{baseURL}}/{{urlPath}}/notifications/:notificationId
+Content-Type: application/json
+Accept: application/json
+

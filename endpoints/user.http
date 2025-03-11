@@ -1,0 +1,140 @@
+@baseURL = http://localhost:5000
+@urlPath = api/v1
+
+
+### GET USER
+GET {{baseURL}}/{{urlPath}}/users/userId
+Content-Type: application/json
+Accept: application/json
+
+### GET USER LIST WITH TYPE ( type= 'friends' | 'follower' | 'requests' | ' following'}
+GET {{baseURL}}/{{urlPath}}/users-list/:page/:type
+Content-Type: application/json
+Accept: application/json
+
+
+### GET IMAGES FROM USER
+GET {{baseURL}}/{{urlPath}}/users/nguyenhuydu1/images
+Content-Type: application/json
+Accept: application/json
+
+{
+    "sort":"descc123123",
+    "max":10
+}
+
+### UPDATE AVARTAR
+PUT {{baseURL}}/{{urlPath}}/update-avatar
+Content-Type: application/json
+Accept: application/json
+
+{
+    "text":"Update avatar",
+    "avatar":"data:image/jpeg;base64,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"
+}
+
+### UPDATE COVER
+PUT {{baseURL}}/{{urlPath}}/update-cover
+Content-Type: application/json
+Accept: application/json
+
+{
+    "text":"Update cover",
+    "avatar":"12312"
+}
+
+
+### UPDATE INFO
+PUT {{baseURL}}/{{urlPath}}/update-info
+Content-Type: application/json
+Accept: application/json
+
+{
+  "detailsInfo": {
+    "bio": "My name is Du4",
+    "otherName": "DuDev1",
+    "job": "Stud3ent",
+    "workplace": "ABC",
+    "highSchool": "BCA",
+    "college": "ACC",
+    "currentCity": "ACB",
+    "homeTown": "CAB",
+    "relationship": "Single"
+  }
+}
+
+
+### ADD FRIEND
+PUT {{baseURL}}/{{urlPath}}/add-friend/67cc505cd8a6a9d3c8086f99
+Content-Type: application/json
+Accept: application/json
+
+
+### CANCLE REQUEST
+PUT {{baseURL}}/{{urlPath}}/cancle-request/6704cb04410cc9b0c6597f03
+Content-Type: application/json
+Accept: application/json
+
+
+### FOLLOW
+PUT {{baseURL}}/{{urlPath}}/follow/6704cb04410cc9b0c6597f03
+Content-Type: application/json
+Accept: application/json
+
+
+### UNFOLLOW
+PUT {{baseURL}}/{{urlPath}}/unfollow/6704cb04410cc9b0c6597f03
+Content-Type: application/json
+Accept: application/json
+
+
+
+### ACCEPT REQUEST
+PUT {{baseURL}}/{{urlPath}}/accept-request/6704cc0abf34f3d05fd85d66
+Content-Type: application/json
+Accept: application/json
+
+
+
+### UNFRIEND
+PUT {{baseURL}}/{{urlPath}}/unfriend/6704cc0abf34f3d05fd85d66
+Content-Type: application/json
+Accept: application/json
+
+
+### DELETE REQUEST
+PUT {{baseURL}}/{{urlPath}}/delete-request/6704cc0abf34f3d05fd85d66
+Content-Type: application/json
+Accept: application/json
+
+
+### SEARCH USERS
+GET {{baseURL}}/{{urlPath}}/search/
+Content-Type: application/json
+Accept: application/json
+
+
+### ADD TO SEARCH HISTORY
+POST {{baseURL}}/{{urlPath}}/add-to-search-history
+Content-Type: application/json
+Accept: application/json
+
+{
+  "searchUser":"6704cc0abf34f3d05fd85d66"
+}
+
+
+### GET LIST SEARCHED
+GET {{baseURL}}/{{urlPath}}/list-searched
+Content-Type: application/json
+Accept: application/json
+
+
+
+
+
+
+
+
+
+

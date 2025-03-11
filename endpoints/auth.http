@@ -1,0 +1,86 @@
+@baseURL = http://localhost:5000
+@urlPath = api/v1
+
+### REGISTER 
+POST {{baseURL}}/{{urlPath}}/register
+Content-Type: application/json
+Accept: application/json
+
+{
+    "firstName": "",
+    "lastName": "",
+    "email":"",
+    "password":"",
+    "bYear":"",
+    "bMonth":"",
+    "bDay":"",
+    "gender":""
+}
+
+### LOGIN
+POST {{baseURL}}/{{urlPath}}/login
+Content-Type: application/json
+Accept: application/json
+
+{
+    "emailOrUsername":"",
+    "password":""
+}
+
+
+### REFRESH TOKEN
+POST {{baseURL}}/{{urlPath}}/refresh-token
+Content-Type: application/json
+Accept: application/json
+
+{
+   "refreshToken": ""
+}
+
+
+### FORGOT PASSWORD
+POST {{baseURL}}/{{urlPath}}/forgot-password
+Content-Type: application/json
+Accept: application/json
+
+{
+    "email":""
+}
+
+###
+POST {{baseURL}}/{{urlPath}}/reset-password/:token
+Content-Type: application/json
+Accept: application/json
+
+{
+    "password":"",
+    "confirmPassword":""
+}
+
+
+###
+POST {{baseURL}}/{{urlPath}}/verify/:verifyToken
+Content-Type: application/json
+Accept: application/json
+
+{
+    "code":586143
+}
+
+
+###
+POST {{baseURL}}/{{urlPath}}/change-password
+Content-Type: application/json
+Accept: application/json
+
+{
+   "password":"",
+   "confirmPassword":""
+}
+
+###
+POST {{baseURL}}/{{urlPath}}/logout
+Content-Type: application/json
+Accept: application/json
+
+

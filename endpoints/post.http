@@ -1,0 +1,34 @@
+@baseURL = http://localhost:5000
+@urlPath = api/v1/posts
+POST {{baseURL}}/{{urlPath}}/
+Content-Type: application/json
+Accept: application/json
+
+{
+    "text":"",
+    "images":"",
+    "gifUrl":"",
+    "feelings":"",
+    "privancy":""
+}
+
+### GET POSTS
+GET {{baseURL}}/{{urlPath}}/:page
+Content-Type: application/json
+Accept: application/json
+
+### GET USER POSTS
+GET {{baseURL}}/{{urlPath}}/:userId/1
+Content-Type: application/json
+Accept: application/json
+
+
+### UPDATE POST
+PUT {{baseURL}}/{{urlPath}}/:postId
+Content-Type: application/json
+Accept: application/json
+
+### DELETE POST
+DELETE  {{baseURL}}/{{urlPath}}/:postId
+Content-Type: application/json
+Accept: application/json
