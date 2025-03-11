@@ -19,16 +19,9 @@
 - Mongoose
 - Redis
 - Express
-- Bull
-- PM2
-- AWS
-- Terraform
 - Nodemailer
-- Sendgrid mail
 - Cloudinary
-- Jest
 - Lodash
-- Socket.io
 
 ## Requirements
 
