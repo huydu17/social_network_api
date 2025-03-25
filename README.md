@@ -18,13 +18,12 @@
 - Mongoose
 - Redis
 - Express
-- Nodemailer
 - Cloudinary
 - Lodash
 
 ## Requirements
 
-- Node 16.x or higher
+- Node
 - Redis ([https://redis.io/download/](https://redis.io/download/))
 - MongoDB ([https://www.mongodb.com/docs/manual/administration/install-community/](https://www.mongodb.com/docs/manual/administration/install-community/))
 - Typescript
@@ -32,8 +31,6 @@
 - Local email sender and password [https://ethereal.email/](https://ethereal.email/)
 
 ## Local Installation
-
-- There are three different branches develop, staging and main. The develop branch is the default branch.
 
 ```bash
 git clone https://github.com/huydu17/social_network_api/tree/main/endpoints
