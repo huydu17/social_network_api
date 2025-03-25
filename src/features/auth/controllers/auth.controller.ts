@@ -9,7 +9,7 @@ class AuthController {
     const { accessToken, refreshToken, user, verifyToken } = await authService.register(req.body);
     setCookies(res, accessToken, refreshToken);
     res.status(HTTP_STATUS.CREATED).json({
-      message: 'Tạo tài khoản thành công',
+      message: 'Account created successfully',
       data: user,
       accessToken,
       refreshToken,
@@ -20,7 +20,7 @@ class AuthController {
     const { accessToken, refreshToken, userFound } = await authService.login(req.body);
     setCookies(res, accessToken, refreshToken);
     res.status(HTTP_STATUS.CREATED).json({
-      message: 'Đăng nhập thành công',
+      message: 'Login successful',
       data: userFound,
       accessToken,
       refreshToken
@@ -37,19 +37,19 @@ class AuthController {
   public async forgotPassword(req: Request, res: Response): Promise<void> {
     await authService.forgotPassword(req.body.email);
     res.status(HTTP_STATUS.OK).json({
-      message: 'Đã gửi. Vui lòng kiểm tra Email'
+      message: 'Sent. Please check your email'
     });
   }
   public async resetPassword(req: Request, res: Response): Promise<void> {
     await authService.resetPassword(req.body.password, req.params.token);
     res.status(HTTP_STATUS.OK).json({
-      message: 'Đổi mật khẩu thành công'
+      message: 'Password changed successfully'
     });
   }
   public async verifyUser(req: Request, res: Response): Promise<void> {
     await authService.verifyUser(req.params.verifyToken, req.body.code);
     res.status(HTTP_STATUS.OK).json({
-      message: 'Xác minh tài khoản thành công'
+      message: 'Account verification successful'
     });
   }
   public async changPassword(req: Request, res: Response): Promise<void> {

@@ -25,7 +25,7 @@ class AuthService {
     const { email } = requestBody;
     const existingUser: IUserDocument = (await userService.getUserByEmail(email)) as IUserDocument;
     if (existingUser) {
-      throw new BadRequestException('Tài khoản đã tồn tại');
+      throw new BadRequestException('Account already exists');
     }
     const data = await this.registerData(requestBody);
     const user: IUserDocument = await User.create(data);
@@ -39,7 +39,7 @@ class AuthService {
       verifyTokenExpiresAt: Date.now() + 15 * 60 * 1000
     });
     const template = verifyTemplate.verifyTemplate(`${user.firstName + ' ' + user.lastName}`, verifyCode);
-    await mailTransport.sendMail(user.email, 'XÁC MINH TÀI KHOẢN', template);
+    await mailTransport.sendMail(user.email, 'VERIFY ACCOUNT', template);
     await userCache.saveUserToCache(`${user._id}`, user);
     return { accessToken, refreshToken, user, verifyToken: encryptCode };
   }
@@ -47,13 +47,13 @@ class AuthService {
   public async verifyUser(verifyToken: string, code: number): Promise<void> {
     const token: ITokenDocument | null = await this.getTokenByVerficationToken(verifyToken);
     if (!token) {
-      throw new BadRequestException('Token không hợp lệ');
+      throw new BadRequestException('Invalid verification token');
     }
     console.log(token);
     const user: IUserDocument = (await userService.getUserById(`${token.userId}`)) as IUserDocument;
     const decryptToken: string = cryptr.decrypt(verifyToken);
     if (code.toString() !== decryptToken) {
-      throw new BadRequestException('Mã xác minh không đúng');
+      throw new BadRequestException('Incorrect verification code');
     }
     console.log(user);
     user.verified = true;
@@ -66,16 +66,16 @@ class AuthService {
     const { emailOrUsername, password } = requestBody;
     const userFound: IUserDocument | null = await userService.getUserByEmailOrUsername(emailOrUsername);
     if (!userFound) {
-      throw new BadRequestException('Tài khoản không tồn tại');
+      throw new BadRequestException('Account does not exist');
     }
     const isMatch = await userFound.comparePassword(password);
-    if (!isMatch) {
-      throw new BadRequestException('Mật khẩu không đúng');
+    if (!userFound) {
+      throw new BadRequestException('Account does not exist');
     }
     const { accessToken, refreshToken } = await this.generateAndSaveTokens(userFound);
     const token: ITokenDocument | null = await Token.findOne({ userId: userFound._id.toString() });
     if (!token) {
-      throw new BadRequestException('Token không hợp lệ');
+      throw new BadRequestException('Invalid verification token');
     }
     token.refreshToken = refreshToken;
     await token.save();
@@ -104,7 +104,7 @@ class AuthService {
   public async forgotPassword(email: string): Promise<void> {
     const existingUser: IUserDocument = (await userService.getUserByEmail(email)) as IUserDocument;
     if (!existingUser) {
-      throw new BadRequestException('Tài khoản không tồn tại');
+      throw new BadRequestException('Account does not exist');
     }
     const resetToken: string = generateRadomHex(`${existingUser._id}`);
     await this.updateResetPasswordToken(`${existingUser._id}`, resetToken, Date.now() + 15 * 60 * 1000);
@@ -113,14 +113,14 @@ class AuthService {
       `${existingUser.firstName + ' ' + existingUser.lastName}`,
       resetLink
     );
-    await mailTransport.sendMail(existingUser.email, 'Đặt lại mật khẩu', template);
+    await mailTransport.sendMail(existingUser.email, 'RESET PASSWORD', template);
   }
 
   public async resetPassword(password: string, token: string): Promise<void> {
     const tokenFound: ITokenDocument = (await this.getTokenByResetToken(token)) as ITokenDocument;
     if (!tokenFound) {
       throw new BadRequestException(
-        'Mã xác nhận của bạn đã hết hạn hoặc không hợp lệ. Vui lòng yêu cầu mã xác nhận mới từ email của bạn.'
+        'Your verification code has expired or is invalid. Please request a new verification code from your email.'
       );
     }
     const user: IUserDocument = (await userService.getUserById(`${tokenFound.userId}`)) as IUserDocument;
