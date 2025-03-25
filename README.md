@@ -33,7 +33,7 @@
 ## Local Installation
 
 ```bash
-[git clone https://github.com/huydu17/social_network_api/tree/main/endpoints](https://github.com/huydu17/social_network_api.git)
+https://github.com/huydu17/social_network_api.git
 npm install
 ```
 - To start the server after installation, run
