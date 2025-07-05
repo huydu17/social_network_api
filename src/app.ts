@@ -1,7 +1,7 @@
 import express, { Express } from 'express';
 import { ChatifyServer } from './server';
-import connectDb from './shared/config/connectDb';
-import { appConfig } from './shared/config/appConfig';
+import connectDb from './config/connectDb';
+import { appConfig } from './config/appConfig';
 class Application {
   public run(): void {
     this.loadConfig();

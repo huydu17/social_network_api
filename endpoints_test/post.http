@@ -5,30 +5,31 @@ Content-Type: application/json
 Accept: application/json
 
 {
-    "text":"",
-    "images":"",
-    "gifUrl":"",
-    "feelings":"",
-    "privacy":""
+    "images":""
 }
 
 ### GET POSTS
-GET {{baseURL}}/{{urlPath}}/:page
+GET {{baseURL}}/{{urlPath}}/1
 Content-Type: application/json
 Accept: application/json
 
 ### GET USER POSTS
-GET {{baseURL}}/{{urlPath}}/:userId/1
+GET {{baseURL}}/{{urlPath}}/67cc506ed8a6a9d3c8086fa4/1
 Content-Type: application/json
 Accept: application/json
 
-
-### UPDATE POST
-PUT {{baseURL}}/{{urlPath}}/:postId
-Content-Type: application/json
-Accept: application/json
 
 ### DELETE POST
-DELETE  {{baseURL}}/{{urlPath}}/:postId
+PUT {{baseURL}}/{{urlPath}}/67bfd82dc7cadff0d79208aa/
+Content-Type: application/json
+Accept: application/json
+
+{
+    
+}
+
+
+### DELETE POST
+DELETE  {{baseURL}}/{{urlPath}}/67c334793a449356abadbbac
 Content-Type: application/json
 Accept: application/json

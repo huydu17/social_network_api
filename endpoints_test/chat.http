@@ -1,18 +1,14 @@
 @baseURL = http://localhost:5000
 @urlPath = api/v1
-
-### ADD MESSAGE
 POST {{baseURL}}/{{urlPath}}/chat/message
 Content-Type: application/json
 Accept: application/json
 
 {
     "conversationId": "6857b28eb088794138d98560",
-    "receiverId": "684a8c906cd3051f3fdedaf0",
-    "textMessage": "ê",
+    "receiverId": "684a8b6b6cd3051f3fdedada",
+    "textMessage": "ăn cơm chưa",
     "gifUrl": "",
-    "image": "",
-    "isRead": false
 }
 
 ### GET CONVERSATION LIST
@@ -22,20 +18,18 @@ Accept: application/json
 
 
 ### GET MESSAGES
-GET {{baseURL}}/{{urlPath}}/chat/message/:receiverId
+GET {{baseURL}}/{{urlPath}}/chat/message/67cc505cd8a6a9d3c8086f99
 Content-Type: application/json
 Accept: application/json
 
 ### MARK MESSAGE AS DELETED
-### type = 'deleteForMe' | 'deleteForEveryone'
-DELETE  {{baseURL}}/{{urlPath}}/chat/mark-as-deleted/:messageId/:receiverId/:type
+DELETE  {{baseURL}}/{{urlPath}}/chat/mark-as-deleted/67cee916967ddf9ec4f82c69/67cc505cd8a6a9d3c8086f99/deleteForEveryOne
 Content-Type: application/json
 Accept: application/json
 
 
 ### MARK MESSAGE AS READ
-
-PUT  {{baseURL}}/{{urlPath}}/chat/mask-as-read/:receiverId
+PUT  {{baseURL}}/{{urlPath}}/chat/mask-as-read/67cc505cd8a6a9d3c8086f99
 Content-Type: application/json
 Accept: application/json
 
@@ -46,8 +40,8 @@ Content-Type: application/json
 Accept: application/json
 
 {
-    "conversationId": "",
-    "messageId": "",
-    "reaction": "",
-    "type":""
+    "conversationId": "67cee916967ddf9ec4f82c65",
+    "messageId": "67cef90815b3163ec6490587",
+    "reaction": "love",
+    "type":"add"
 }

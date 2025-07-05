@@ -5,14 +5,18 @@ import cors from 'cors';
 import hpp from 'hpp';
 import http from 'http';
 import compression from 'compression';
-import { appConfig } from './shared/config/appConfig';
 import HTTP_STATUS from 'http-status-codes';
 import { Server } from 'socket.io';
 import { createClient } from 'redis';
 import { createAdapter } from '@socket.io/redis-adapter';
-import { appRoute } from './shared/routes/app.route';
-import { CustomError, IErrorResponse } from './shared/middlewares/globalErrorHandle';
 import fileUpload from 'express-fileupload';
+import { appRoute } from './routes/app.route';
+import { CustomError, IErrorResponse } from './middlewares/globalErrorHandle';
+import { SocketIOPostHandler } from './services/sockets/post.socket';
+import { SocketIONotificationHandler } from './services/sockets/notification.socket';
+import { SocketIOChatHandler } from './services/sockets/chat.socket';
+import { SocketIOUserHandler } from './services/sockets/user.socket';
+import { appConfig } from './config/appConfig';
 const PORT = appConfig.PORT;
 export class ChatifyServer {
   constructor(private app: Application) {
@@ -71,7 +75,7 @@ export class ChatifyServer {
   }
   private startHttpServer(httpServer: http.Server): void {
     httpServer.listen(PORT, () => {
-      console.log(`Server is running with PORT ${PORT}`, '');
+      console.log(`Server is running with PORT ${PORT}`);
     });
   }
   private async createSocketIO(httpServer: http.Server): Promise<Server> {
@@ -87,5 +91,15 @@ export class ChatifyServer {
     io.adapter(createAdapter(pubClient, subClient));
     return io;
   }
-  private socketIOConnection(io: Server): void {}
+  private socketIOConnection(io: Server): void {
+    const postSocket: SocketIOPostHandler = new SocketIOPostHandler(io);
+    const notificationSocket: SocketIONotificationHandler = new SocketIONotificationHandler();
+    const chatSocket: SocketIOChatHandler = new SocketIOChatHandler(io);
+    const userSocket: SocketIOUserHandler = new SocketIOUserHandler();
+
+    postSocket.listen();
+    notificationSocket.listen(io);
+    chatSocket.listen();
+    userSocket.listen(io);
+  }
 }

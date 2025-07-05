@@ -1,0 +1,135 @@
+@baseURL = http://localhost:5000
+@urlPath = api/v1
+
+
+### GET USER
+GET {{baseURL}}/{{urlPath}}/users/67cbb50c9852e756612b3bb9
+Content-Type: application/json
+Accept: application/json
+
+### GET USER LIST WITH TYPE ( type= 'friends' | 'follower' | 'requests'}
+GET {{baseURL}}/{{urlPath}}/users-list/1/all
+Content-Type: application/json
+Accept: application/json
+
+### UPDATE AVARTAR
+PUT {{baseURL}}/{{urlPath}}/update-avatar
+Content-Type: application/json
+Accept: application/json
+
+{
+    "text":"",
+    "avatar":""
+}
+
+### UPDATE COVER
+PUT {{baseURL}}/{{urlPath}}/update-cover
+Content-Type: application/json
+Accept: application/json
+
+{
+    "text":"",
+    "avatar":""
+}
+
+
+### UPDATE INFO
+PUT {{baseURL}}/{{urlPath}}/update-info
+Content-Type: application/json
+Accept: application/json
+
+{
+  "detailsInfo": {
+    "bio": "",
+    "otherName": "",
+    "job": "",
+    "workplace": "",
+    "highSchool": "",
+    "college": "",
+    "currentCity": "",
+    "homeTown": "",
+    "relationship": ""
+  }
+}
+
+
+### ADD FRIEND
+PUT {{baseURL}}/{{urlPath}}/add-friend/:id
+Content-Type: application/json
+Accept: application/json
+
+
+### CANCLE REQUEST
+PUT {{baseURL}}/{{urlPath}}/cancle-request/:id
+Content-Type: application/json
+Accept: application/json
+
+
+### FOLLOW
+PUT {{baseURL}}/{{urlPath}}/follow/68498165b0e124a64b7676bc
+Content-Type: application/json
+Accept: application/json
+
+
+### UNFOLLOW
+PUT {{baseURL}}/{{urlPath}}/unfollow/:id
+Content-Type: application/json
+Accept: application/json
+
+
+
+### ACCEPT REQUEST
+PUT {{baseURL}}/{{urlPath}}/accept-request/:id
+Content-Type: application/json
+Accept: application/json
+
+
+
+### UNFRIEND
+PUT {{baseURL}}/{{urlPath}}/unfriend/:id
+Content-Type: application/json
+Accept: application/json
+
+
+### DELETE REQUEST
+PUT {{baseURL}}/{{urlPath}}/delete-request/:id
+Content-Type: application/json
+Accept: application/json
+
+
+### SEARCH USERS
+GET {{baseURL}}/{{urlPath}}/search/:searchTerm
+Content-Type: application/json
+Accept: application/json
+
+
+### ADD TO SEARCH HISTORY
+POST {{baseURL}}/{{urlPath}}/add-to-search-history
+Content-Type: application/json
+Accept: application/json
+
+{
+  "searchUser":""
+}
+
+
+### GET LIST SEARCHED
+GET {{baseURL}}/{{urlPath}}/list-searched
+Content-Type: application/json
+Accept: application/json
+
+### GET LIST SEARCHED
+GET {{baseURL}}/{{urlPath}}/get-suggestions
+Content-Type: application/json
+Accept: application/json
+
+
+
+
+
+
+
+
+
+
+

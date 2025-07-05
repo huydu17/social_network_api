@@ -5,6 +5,8 @@
   "main": "app.js",
   "scripts": {
     "dev": "nodemon -r tsconfig-paths/register ./src/app.ts",
+    "seed:data": "ts-node -r tsconfig-paths/register src/seeder.ts",
+    "seed:data-d": "ts-node -r tsconfig-paths/register src/seeder.ts -d",
     "build": "tsc -p ."
   },
   "keywords": [],
@@ -37,6 +39,8 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.6.1",
+    "@faker-js/faker": "^9.8.0",
     "@socket.io/redis-adapter": "^8.3.0",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^2.4.3",
