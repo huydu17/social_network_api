@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import HTTP_STATUS from 'http-status-codes';
+import { REFRESHTOKEN } from 'src/constants/token.constants';
 import { authService } from 'src/services/db/auth.service';
 import { setCookies } from 'src/utils/cookie';
 
@@ -62,17 +63,19 @@ class AuthController {
     });
   }
   public async changePassword(req: Request, res: Response): Promise<void> {
-    console.log(req.body);
     await authService.changePassword(req.body, req.currentUser!);
     res.status(HTTP_STATUS.OK).json({
       message: 'Thay đổi mật khẩu thành công'
     });
   }
   public async logout(req: Request, res: Response): Promise<void> {
+    const refreshToken = req.cookies.refreshToken;
+    if (refreshToken) {
+      await authService.revokeRefreshToken(refreshToken);
+    }
     res.clearCookie(ACCESSTOKEN);
-    res.status(HTTP_STATUS.OK).json({
-      message: 'Đăng xuất thành công'
-    });
+    res.clearCookie(REFRESHTOKEN);
+    res.status(HTTP_STATUS.OK).json({ message: 'Đăng xuất thành công' });
   }
 }
 

@@ -15,7 +15,9 @@ import { verifyToken } from 'src/utils/verify-token';
 import { TokenGenerator } from 'src/utils/genarateToken';
 import { generateRadomHex } from 'src/utils/generateRandomHex';
 import { Helpers } from 'src/utils/helpers';
+
 const cryptr = new Cryptr(appConfig.CRYPTR_KEY!);
+
 class AuthService {
   public async register(requestBody: IRegisterData) {
     const { email } = requestBody;
@@ -34,6 +36,9 @@ class AuthService {
     const token: ITokenDocument | null = await this.getTokenByVerficationToken(verifyToken);
     if (!token) {
       throw new BadRequestException('Mã xác minh không hợp lệ');
+    }
+    if (token.verifyTokenExpiresAt && token.verifyTokenExpiresAt < Date.now()) {
+      throw new BadRequestException('Mã xác minh đã hết hạn');
     }
     const user: IUserDocument = (await userService.getUserById(`${token.userId}`)) as IUserDocument;
     const decryptToken: string = cryptr.decrypt(verifyToken);
@@ -57,11 +62,6 @@ class AuthService {
       throw new BadRequestException('Mật khẩu không đúng');
     }
     const { accessToken, refreshToken } = await this.generateAndSaveTokens(userFound);
-    const token: ITokenDocument | null = await Token.findOne({ userId: userFound._id.toString() });
-    if (!token) {
-      throw new BadRequestException('Mã xác minh không hợp lệ');
-    }
-    token.refreshToken = refreshToken;
     return { accessToken, refreshToken, userFound };
   }
 
@@ -79,7 +79,7 @@ class AuthService {
     }
     const { iat, exp, aud, iss, ...newPayload } = payload;
     const tokens = TokenGenerator.generateToken(newPayload);
-    await Token.findByIdAndUpdate({ _id: token._id }, { refreshToken: tokens.refreshToken });
+    await Token.findByIdAndUpdate({ _id: token._id }, { refreshToken: tokens.refreshToken }, { new: true });
     return tokens;
   }
 
@@ -111,6 +111,7 @@ class AuthService {
     tokenFound.passwordResetTokenExpiresAt = undefined;
     await Promise.all([tokenFound.save(), user.save()]);
   }
+
   public async changePassword(data: IChangePassword, currentUser: UserPayload) {
     const { oldPassword, newPassword } = data;
     const user: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
@@ -140,6 +141,7 @@ class AuthService {
     const token: ITokenDocument | null = await Token.findOne({ verifyToken: vtoken });
     return token;
   }
+
   private async getTokenByResetToken(resetToken: string) {
     const token: ITokenDocument = (await Token.findOne({
       passwordResetToken: resetToken,
@@ -149,13 +151,17 @@ class AuthService {
   }
 
   private async updateResetPasswordToken(userId: string, resetToken: string, tokenExpires: number) {
-    const existingToken: ITokenDocument = (await Token.findOne({ userId })) as ITokenDocument;
-    if (!existingToken) {
-      throw new BadRequestException('Mã đặt lại mật khẩu không hợp lệ');
+    const updatedToken = await Token.findOneAndUpdate(
+      { userId },
+      {
+        passwordResetToken: resetToken,
+        passwordResetTokenExpiresAt: tokenExpires
+      },
+      { new: true, upsert: true }
+    );
+    if (!updatedToken) {
+      throw new BadRequestException('Không thể cập nhật mã đặt lại mật khẩu');
     }
-    existingToken.passwordResetToken = resetToken;
-    existingToken.passwordResetTokenExpiresAt = tokenExpires;
-    await existingToken.save();
   }
 
   private async generateAndSaveTokens(user: IUserDocument) {
@@ -168,24 +174,46 @@ class AuthService {
       avatar: user.avatar
     };
     const { accessToken, refreshToken } = TokenGenerator.generateToken(payload);
-    await Token.create({
-      userId: user._id,
-      refreshToken
-    });
+    await Token.findOneAndUpdate(
+      { userId: user._id },
+      {
+        refreshToken,
+        $unset: {
+          verifyToken: 1,
+          verifyTokenExpiresAt: 1
+        }
+      },
+      {
+        upsert: true,
+        new: true
+      }
+    );
+
     return { accessToken, refreshToken };
   }
+
   public async sendCode(user: IUserDocument, refreshToken: string) {
     const verifyCode = Math.floor(100000 + Math.random() * 900000);
     const encryptCode = cryptr.encrypt(verifyCode.toString());
-    await Token.create({
-      userId: user._id,
-      refreshToken: refreshToken,
-      verifyToken: encryptCode,
-      verifyTokenExpiresAt: Date.now() + 15 * 60 * 1000
-    });
+    await Token.findOneAndUpdate(
+      { userId: user._id },
+      {
+        refreshToken: refreshToken,
+        verifyToken: encryptCode,
+        verifyTokenExpiresAt: Date.now() + 15 * 60 * 1000
+      },
+      {
+        upsert: true,
+        new: true
+      }
+    );
     const template = verifyTemplate.verifyTemplate(`${user.firstName + ' ' + user.lastName}`, verifyCode);
     await mailTransport.sendMail(user.email, 'VERIFY ACCOUNT', template);
     return encryptCode;
+  }
+
+  public async revokeRefreshToken(token: string): Promise<void> {
+    await Token.deleteOne({ refreshToken: token });
   }
 }
 
