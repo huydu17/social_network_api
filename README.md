@@ -5,7 +5,7 @@ A comprehensive social network backend built with Node.js, TypeScript, MongoDB, 
 🎨 **Frontend Repository**: [Social Network UI](https://github.com/huydu17/social_network_ui) - React frontend for this social network backend
 ## 🚀 Features
 
-- **Authentication**: JWT, Google OAuth, email verification, password reset
+- **Authentication**: JWT, email verification, password reset
 - **User Management**: Profile management, avatar/cover updates, user search
 - **Posts**: Create, update, delete posts with images, pagination
 - **Social Features**: Friend requests, follow/unfollow, user suggestions
