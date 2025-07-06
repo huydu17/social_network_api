@@ -35,6 +35,31 @@ A comprehensive social network backend built with Node.js, TypeScript, MongoDB, 
 - API key, secret and cloud name from cloudinary [https://cloudinary.com/](https://cloudinary.com/)
 - Local email sender and password [https://ethereal.email/](https://ethereal.email/)
 
+## 🔧 Environment Variables
+
+Create `.env` file in the directory:
+
+```env
+PORT=your_server_port
+NODE_ENV=your_node_environment
+CLIENT_URL=your_client_url
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+JWT_TOKEN_AUDIENCE=your_jwt_token_audience
+JWT_TOKEN_ISSUER=your_jwt_token_issuer
+JWT_ACCESS_TOKEN_TTL=your_jwt_access_token_ttl
+JWT_REFRESH_TOKEN_TTL=your_jwt_refresh_token_ttl
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+REDIS_HOST=your_redis_host
+EMAIL_HOST=your_email_host
+EMAIL_USER=your_email_user
+EMAIL_PASSWORD=your_email_password
+EMAIL_SENDER=your_email_sender
+CRYPTR_KEY=your_cryptr_key
+```
+
 ## 📦 Installation
 
 ```bash
