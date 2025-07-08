@@ -3,7 +3,7 @@ import { authController } from 'src/controllers/auth.controller';
 import { authMiddlware } from 'src/middlewares/auth.middleware';
 import { asyncWrapper } from 'src/middlewares/globalErrorHandle';
 import { validateSchema } from 'src/middlewares/joi-validate.middleware';
-import { emailSchema, passwordSchema, signInSchema, signUpSchema } from 'src/schemas/auth';
+import { emailSchema, passwordSchema, resetPasswordSchema, signInSchema, signUpSchema } from 'src/schemas/auth';
 
 class AuthRoute {
   private route: Router;
@@ -19,7 +19,7 @@ class AuthRoute {
     this.route.post('/forgot-password', validateSchema(emailSchema), asyncWrapper(authController.forgotPassword));
     this.route.post(
       '/reset-password/:token',
-      validateSchema(passwordSchema),
+      validateSchema(resetPasswordSchema),
       asyncWrapper(authController.resetPassword)
     );
     this.route.put(

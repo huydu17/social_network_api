@@ -13,8 +13,8 @@ class PostRoute {
   }
   public routes(): Router {
     this.route.post('/posts', upload, asyncWrapper(postController.create));
-    this.route.get('/posts/:page', asyncWrapper(postController.getAllPosts));
-    this.route.get('/posts/:userId/:page', asyncWrapper(postController.getUserPosts));
+    this.route.get('/posts', asyncWrapper(postController.getAllPosts));
+    this.route.get('/posts/:userId', asyncWrapper(postController.getUserPosts));
     this.route.put('/posts/:postId', upload, asyncWrapper(postController.updatePost));
     this.route.delete('/posts/:postId', asyncWrapper(postController.deletePost));
     return this.route;

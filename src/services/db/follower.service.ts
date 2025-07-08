@@ -46,6 +46,8 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${receiver._id}`, 'follower', 'add', `${sender._id}`),
         userCache.updateRelationsUserCache(`${sender._id}`, 'following', 'add', `${receiver._id}`)
       ]);
+      const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
+      return updatedSender;
     } else {
       throw new BadRequestException('Yêu cầu đã được gửi');
     }
@@ -77,6 +79,8 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${receiver._id}`, 'follower', 'remove', `${sender._id}`),
         userCache.updateRelationsUserCache(`${sender._id}`, 'following', 'remove', `${receiver._id}`)
       ]);
+      const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
+      return updatedSender;
     } else {
       throw new BadRequestException('Yêu cầu đã được hủy');
     }
@@ -87,7 +91,6 @@ class FollowerService {
     }
     const sender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
     const receiver: IUserDocument = (await userService.getUserById(userId)) as IUserDocument;
-
     if (!receiver.follower.includes(sender._id.toString()) && !sender.following.includes(receiver._id.toString())) {
       await sender.updateOne({
         $push: { following: receiver._id }
@@ -119,6 +122,8 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${sender._id}`, 'following', 'add', `${receiver._id}`),
         userCache.updateRelationsUserCache(`${receiver._id}`, 'follower', 'add', `${sender._id}`)
       ]);
+      const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
+      return updatedSender;
     } else {
       throw new BadRequestException('Đã theo dõi người dùng này');
     }
@@ -146,6 +151,8 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${sender._id}`, 'following', 'remove', `${receiver._id}`),
         userCache.updateRelationsUserCache(`${receiver._id}`, 'follower', 'remove', `${sender._id}`)
       ]);
+      const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
+      return updatedSender;
     } else {
       throw new BadRequestException('Chưa theo dõi người dùng này');
     }
@@ -188,6 +195,8 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${receiver._id}`, 'friends', 'add', `${sender._id}`),
         userCache.updateRelationsUserCache(`${receiver._id}`, 'requests', 'remove', `${sender._id}`)
       ]);
+      const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
+      return updatedSender;
     } else if (!receiver.requests.includes(sender._id.toString())) {
       throw new BadRequestException('Người dùng chưa gửi yêu cầu kết bạn');
     } else {
@@ -213,6 +222,8 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${receiver._id}`, 'friends', 'remove', `${sender._id}`),
         userCache.updateRelationsUserCache(`${receiver._id}`, 'follower', 'remove', `${sender._id}`)
       ]);
+      const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
+      return updatedSender;
     } else {
       throw new BadRequestException('Chưa là bạn bè');
     }
@@ -232,6 +243,8 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${receiver._id}`, 'follower', 'remove', `${sender._id}`),
         userCache.updateRelationsUserCache(`${receiver._id}`, 'requests', 'remove', `${sender._id}`)
       ]);
+      const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
+      return updatedSender;
     } else {
       throw new BadRequestException('Yêu cầu đã được xóa');
     }

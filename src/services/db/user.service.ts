@@ -20,20 +20,24 @@ class UserService {
     const existingUser = cachedUser ? cachedUser : await this.getUserById(userId);
     return existingUser;
   }
-  public async getUserList(userId: string, type: string, page: number = 1, limit: number = 10) {
-    let userList = [];
+  public async getUserList(userId: string, type: string, page: number, limit: number) {
+    let userList: IUserDocument[] = [];
+    let totalUsers = 0;
+    const limtOption: number = type === 'follower' ? 21 : limit;
     if (type === 'all') {
       const currentUser = await User.findById(userId).select('following');
       if (!currentUser) {
         throw new BadRequestException('Không tìm thấy người dùng');
       }
       const excludeIds = [userId, ...currentUser.following];
-      userList = await User.find({
+      const query = {
         _id: { $nin: excludeIds }
-      }).select('_id firstName lastName avatar following follower');
+      };
+      userList = await User.find(query).select('_id firstName lastName avatar following follower');
+      totalUsers = await User.countDocuments(query);
     } else {
-      const usersFromCache = await userCache.getAllUsersFromCache(page, limit, type, userId);
-      if (usersFromCache.length > 0) {
+      const usersFromCache: any = await userCache.getAllUsersFromCache(page, limtOption, type, userId);
+      if (usersFromCache.totalUsers > 0) {
         return usersFromCache;
       }
       const user: any = await User.findById(userId)
@@ -43,11 +47,17 @@ class UserService {
         throw new BadRequestException('Không tìm thấy người dùng');
       }
       userList = user[type];
+      totalUsers = user[type].length;
     }
-    const start = (page - 1) * limit;
-    const end = start + limit;
-    return userList.slice(start, end);
+    const start = (page - 1) * limtOption;
+    const end = start + limtOption;
+    userList = userList.slice(start, end);
+    return {
+      userList,
+      totalUsers
+    };
   }
+
   public async updateAvatar(file: UploadedFile, currentUser: UserPayload) {
     return await this.updateUserImage(file, currentUser, TYPE_AVATAR);
   }

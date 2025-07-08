@@ -29,6 +29,7 @@ class AuthService {
     const user: IUserDocument = await User.create(data);
     const { accessToken, refreshToken } = await this.generateAndSaveTokens(user);
     const verifyToken = await this.sendCode(user, refreshToken);
+    await userCache.saveUserToCache(`${user._id}`, user);
     return { accessToken, refreshToken, user, verifyToken };
   }
 
@@ -62,6 +63,7 @@ class AuthService {
       throw new BadRequestException('Mật khẩu không đúng');
     }
     const { accessToken, refreshToken } = await this.generateAndSaveTokens(userFound);
+    await userCache.saveUserToCache(`${userFound._id}`, userFound);
     return { accessToken, refreshToken, userFound };
   }
 

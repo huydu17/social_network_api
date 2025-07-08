@@ -29,7 +29,6 @@ class AuthController {
   }
   public async sendCode(req: Request, res: Response): Promise<void> {
     const { user, refreshToken } = req.body;
-    console.log('reqccc', req.body);
     const verifyToken = await authService.sendCode(user, refreshToken);
     res.status(HTTP_STATUS.CREATED).json({
       message: 'Gửi mã thành công',
@@ -51,7 +50,7 @@ class AuthController {
     });
   }
   public async resetPassword(req: Request, res: Response): Promise<void> {
-    await authService.resetPassword(req.body.password, req.params.token);
+    await authService.resetPassword(req.body.newPassword, req.params.token);
     res.status(HTTP_STATUS.OK).json({
       message: 'Đổi mật khẩu thành công'
     });

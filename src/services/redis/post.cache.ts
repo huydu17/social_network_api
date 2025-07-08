@@ -57,7 +57,7 @@ class PostCache {
         }
         return usersToFetch.includes(user.toString());
       });
-      const postsData = await Promise.all(
+      const postsData: any = await Promise.all(
         filteredPosts.map(async (post: any) => ({
           ...post,
           commentsCount: post.commentsCount ? (Helpers.parseJson(`${post.commentsCount}`) as number) : 0,
@@ -70,7 +70,12 @@ class PostCache {
       );
       const start = (page - 1) * limit;
       const end = start + limit;
-      return postsData.slice(start, end);
+      const posts = postsData.slice(start, end);
+      const response: any = {
+        posts: posts,
+        totalPosts: postsData.length
+      };
+      return response;
     } catch (error) {
       throw new InternalException(`Lỗi máy chủ: ${error}`);
     }
@@ -101,7 +106,12 @@ class PostCache {
       );
       const start = (page - 1) * limit;
       const end = start + limit;
-      return postsData.slice(start, end);
+      const posts = postsData.slice(start, end);
+      const response: any = {
+        posts: posts,
+        totalPosts: postsData.length
+      };
+      return response;
     } catch (error) {
       throw new InternalException(`Lỗi máy chủ: ${error}`);
     }

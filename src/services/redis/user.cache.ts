@@ -72,7 +72,6 @@ class UserCache {
       const userKey = `user:${userId}`;
       const fieldData = await redisCache.client.HGET(userKey, field);
       let relations = fieldData ? JSON.parse(fieldData) : [];
-      console.log('check:', relations);
       if (action === 'add') {
         relations = [...new Set([...relations, targetUserId])];
       } else if (action === 'remove') {
@@ -132,6 +131,7 @@ class UserCache {
       }
       const normalizedUsers = replies.map((user: any) => Object.assign({}, user));
       let userList: IUserDocument[] = [];
+      let totalUsers = 0;
       const userFound = normalizedUsers.find((user: any) => user._id === userId);
       if (userFound) {
         const userIds = Helpers.parseJson(userFound[type]);
@@ -149,10 +149,15 @@ class UserCache {
           })
         );
         userList = usersData;
+        totalUsers = usersData.length;
       }
       const start = (page - 1) * limit;
       const end = start + limit;
-      return userList.slice(start, end);
+      const data: any = {
+        userList: userList.slice(start, end),
+        totalUsers
+      };
+      return data;
     } catch (error) {
       throw new InternalException(`Lỗi máy chủ: ${error}`);
     }

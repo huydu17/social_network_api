@@ -10,6 +10,7 @@ import { BadRequestException } from 'src/middlewares/globalErrorHandle';
 import { Comment } from 'src/models/comment.schema';
 import { Reaction } from 'src/models/reaction.schema';
 import { Notification } from 'src/models/notification.schema';
+import { Helpers } from 'src/utils/helpers';
 
 class PostService {
   public async create(requestBody: IPostDocument, file: UploadedFile | undefined, currentUser: UserPayload) {
@@ -28,35 +29,35 @@ class PostService {
     socketPostIO.emit('add-post', postFormatted);
     return post;
   }
-  public async getAllPosts(currentUser: UserPayload, page: number = 1, limit: number = 3) {
+  public async getAllPosts(currentUser: UserPayload, page: number, limit: number) {
     const user: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
     const following = user?.following;
     const usersToFetch: string[] = [...following, currentUser.userId] as string[];
-    const cachePost: any = await postCache.getPostsFromCache(page, limit, usersToFetch);
-    if (cachePost.length > 0) {
-      return { posts: cachePost, totalPosts: cachePost.length };
+    const normalizedUsersToFetch = usersToFetch.map((user) => user.toString());
+    const cachePost: any = await postCache.getPostsFromCache(page, limit, normalizedUsersToFetch);
+    if (cachePost.posts.length > 0) {
+      return cachePost;
     }
-    const totalPosts = await Post.countDocuments();
-    const posts = await Post.find({ user: { $in: usersToFetch } })
-      .populate('user', 'firstName lastName avatar')
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
+    const query = { user: { $in: normalizedUsersToFetch } };
+    let postsQuery = Post.find(query).populate('user', 'firstName lastName avatar').sort({ createdAt: -1 });
+    const totalPosts = await Post.countDocuments(query);
+    postsQuery = postsQuery.skip((page - 1) * limit).limit(limit);
+    const posts = await postsQuery;
     return { posts, totalPosts };
   }
   public async getUserPosts(userId: string, page: number = 1, limit: number = 10) {
     const user: IUserDocument = (await userService.getUserById(userId)) as IUserDocument;
     const cachePost: any = await postCache.getUserPostsFromCache(page, limit, userId);
-    if (cachePost.length > 0) {
-      return { posts: cachePost, totalPosts: cachePost.length };
+    console.log(cachePost);
+    if (cachePost.posts.length > 0) {
+      return cachePost;
     }
-    const totalPosts = await Post.countDocuments();
-    const posts = await Post.find({ user: user._id })
-      .populate('user', 'firstName lastName avatar')
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
-    return { posts, totalPosts: totalPosts };
+    const query = { user: user._id };
+    let postsQuery = Post.find(query).populate('user', 'firstName lastName avatar').sort({ createdAt: -1 });
+    const totalPosts = await Post.countDocuments(query);
+    postsQuery = postsQuery.skip((page - 1) * limit).limit(limit);
+    const posts = await postsQuery;
+    return { posts, totalPosts };
   }
   public async updatePost(postId: string, data: IPostPayload, currentUser: UserPayload, fileList?: UploadedFile) {
     const postExists = await Post.findById(postId);

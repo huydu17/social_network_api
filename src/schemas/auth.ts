@@ -38,6 +38,19 @@ export const passwordSchema: ObjectSchema = Joi.object({
   })
 });
 
+export const resetPasswordSchema: ObjectSchema = Joi.object({
+  newPassword: Joi.string().required().min(8).messages({
+    'string.empty': 'Mật khẩu không được để trống.',
+    'string.min': 'Mật khẩu phải có ít nhất 8 ký tự.',
+    'any.required': 'Mật khẩu là bắt buộc.'
+  }),
+  confirmPassword: Joi.string().required().valid(Joi.ref('newPassword')).messages({
+    'string.empty': 'Xác nhận mật khẩu không được để trống.',
+    'any.only': 'Mật khẩu xác nhận không khớp với mật khẩu.',
+    'any.required': 'Xác nhận mật khẩu là bắt buộc.'
+  })
+});
+
 export const signUpSchema: ObjectSchema = Joi.object({
   firstName: Joi.string().required().trim().messages({
     'string.empty': 'Họ tên không được để trống.',

@@ -13,12 +13,16 @@ class UserController {
     });
   }
   public async getUserList(req: Request, res: Response): Promise<void> {
-    const { page } = req.params;
     const { userId, type } = req.query;
-    const users = await userService.getUserList(`${userId}`, `${type}`, parseInt(page));
+    const pageNum = parseInt(req.query.page as string) || 1;
+    const limitNum = parseInt(req.query.limit as string);
+    const { userList, totalUsers } = await userService.getUserList(`${userId}`, `${type}`, pageNum, limitNum);
     res.status(HTTP_STATUS.OK).json({
       message: `Lấy danh sách ${type} thành công`,
-      data: users
+      data: {
+        users: userList,
+        totalUsers
+      }
     });
   }
   public async updateAvatar(req: Request, res: Response): Promise<void> {

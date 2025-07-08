@@ -12,7 +12,7 @@ class UserRoute {
   }
   public routes(): Router {
     this.route.get('/users/:userId', asyncWrapper(userController.get));
-    this.route.get('/users-list/:page', asyncWrapper(userController.getUserList));
+    this.route.get('/users-list', asyncWrapper(userController.getUserList));
     this.route.put('/update-avatar', asyncWrapper(userController.updateAvatar));
     this.route.put('/update-cover', asyncWrapper(userController.updateCover));
     this.route.put('/update-info', asyncWrapper(userController.updateDetailsInfo));

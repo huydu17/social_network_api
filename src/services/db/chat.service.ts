@@ -30,7 +30,7 @@ class ChatService {
       gifUrl,
       selectedImage: image.url
     });
-    const receiver: IUserDocument = (await userCache.getUserFromCache(`${receiverId}`)) as IUserDocument;
+    const receiver: IUserDocument = (await userService.getUserById(`${receiverId}`)) as IUserDocument;
     if (!conversation) {
       await Conversation.create({
         _id: conversationObjectId,

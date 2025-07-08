@@ -16,8 +16,9 @@ class PostController {
     });
   }
   public async getAllPosts(req: Request, res: Response): Promise<void> {
-    const { page } = req.params;
-    const { posts, totalPosts } = await postService.getAllPosts(req.currentUser!, parseInt(page));
+    const pageNum = parseInt(req.query.page as string) || 1;
+    const limitNum = parseInt(req.query.limit as string) || 10;
+    const { posts, totalPosts } = await postService.getAllPosts(req.currentUser!, pageNum, limitNum);
     res.status(HTTP_STATUS.OK).json({
       message: 'Lấy danh sách bài viết thành công',
       data: {
@@ -27,8 +28,10 @@ class PostController {
     });
   }
   public async getUserPosts(req: Request, res: Response): Promise<void> {
-    const { page, userId } = req.params;
-    const { posts, totalPosts } = await postService.getUserPosts(userId, parseInt(page));
+    const { userId } = req.params;
+    const pageNum = parseInt(req.query.page as string) || 1;
+    const limitNum = parseInt(req.query.limit as string) || 10;
+    const { posts, totalPosts } = await postService.getUserPosts(userId, pageNum, limitNum);
     res.status(HTTP_STATUS.OK).json({
       message: 'Lấy danh sách bài viết của người dùng thành công',
       data: {
