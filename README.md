@@ -1,4 +1,4 @@
-# Social Network Backend
+# Social Network API
 
 A comprehensive social network backend built with Node.js, TypeScript, MongoDB, and Redis. Features include user authentication, posts, real-time chat, friendships, notifications, and more.
 
