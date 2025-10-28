@@ -50,6 +50,7 @@ class AuthService {
     token.verifyToken = undefined;
     token.verifyTokenExpiresAt = undefined;
     await Promise.all([token.save(), user.save()]);
+    await userCache.saveUserToCache(`${user._id}`, user);
   }
 
   public async login(requestBody: ILoginData) {
@@ -112,6 +113,7 @@ class AuthService {
     tokenFound.passwordResetToken = undefined;
     tokenFound.passwordResetTokenExpiresAt = undefined;
     await Promise.all([tokenFound.save(), user.save()]);
+    await userCache.saveUserToCache(`${user._id}`, user);
   }
 
   public async changePassword(data: IChangePassword, currentUser: UserPayload) {
@@ -127,6 +129,7 @@ class AuthService {
     }
     user.password = newPassword;
     await user.save();
+    await userCache.saveUserToCache(`${user._id}`, user);
     return user;
   }
 

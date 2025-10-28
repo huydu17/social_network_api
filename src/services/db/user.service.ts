@@ -13,17 +13,34 @@ import {
 import { User } from 'src/models/user.schema';
 import { BadRequestException } from 'src/middlewares/globalErrorHandle';
 import { TYPE_AVATAR, TYPE_COVER } from 'src/constants/type-post';
+import { redisCache } from '../redis/redis.cache';
+import { Helpers } from 'src/utils/helpers';
 
 class UserService {
   public async findOne(userId: string) {
-    const cachedUser: IUserDocument = (await userCache.getUserFromCache(userId)) as IUserDocument;
-    const existingUser = cachedUser ? cachedUser : await this.getUserById(userId);
+    const cachedUser: IUserDocument | null = await userCache.getUserFromCache(userId);
+    if (cachedUser) {
+      return cachedUser;
+    }
+    const existingUser: IUserDocument | null = await this.getUserById(userId);
+    if (existingUser) {
+      await userCache.saveUserToCache(userId, existingUser);
+    }
     return existingUser;
   }
   public async getUserList(userId: string, type: string, page: number, limit: number) {
     let userList: IUserDocument[] = [];
     let totalUsers = 0;
     const limtOption: number = type === 'follower' ? 21 : limit;
+    const start = (page - 1) * limtOption;
+    const end = start + limtOption;
+    const cacheKey = `user:list:${userId}:${type}:page:1`;
+    if (page === 1) {
+      const cachedData: any = await redisCache.get(cacheKey);
+      if (cachedData) {
+        return cachedData;
+      }
+    }
     if (type === 'all') {
       const currentUser = await User.findById(userId).select('following');
       if (!currentUser) {
@@ -33,29 +50,34 @@ class UserService {
       const query = {
         _id: { $nin: excludeIds }
       };
-      userList = await User.find(query).select('_id firstName lastName avatar following follower');
+      userList = await User.find(query)
+        .select('_id firstName lastName avatar following follower')
+        .skip(start)
+        .limit(limtOption);
       totalUsers = await User.countDocuments(query);
     } else {
-      const usersFromCache: any = await userCache.getAllUsersFromCache(page, limtOption, type, userId);
-      if (usersFromCache.totalUsers > 0) {
-        return usersFromCache;
-      }
       const user: any = await User.findById(userId)
         .select(`${type} -_id`)
-        .populate(type, '_id firstName lastName avatar following follower');
+        .populate({
+          path: type,
+          select: '_id firstName lastName avatar following follower',
+          options: {
+            skip: start,
+            limit: limtOption
+          }
+        });
       if (!user) {
         throw new BadRequestException('Không tìm thấy người dùng');
       }
+      const userTotalCount: any = await User.findById(userId).select(type);
+      totalUsers = userTotalCount[type].length;
       userList = user[type];
-      totalUsers = user[type].length;
     }
-    const start = (page - 1) * limtOption;
-    const end = start + limtOption;
-    userList = userList.slice(start, end);
-    return {
-      userList,
-      totalUsers
-    };
+    const result = { userList, totalUsers };
+    if (page === 1 && userList.length > 0) {
+      await redisCache.set(cacheKey, result, { EX: 60 * 5 });
+    }
+    return result;
   }
 
   public async updateAvatar(file: UploadedFile, currentUser: UserPayload) {
@@ -91,6 +113,11 @@ class UserService {
     await userCache.saveUserToCache(`${user._id}`, user);
   }
   public async search(searchTerm: string) {
+    const cacheKey = `search:user:${Helpers.lowerCase(searchTerm)}`;
+    const cachedResults: IUserDocument[] | null = await redisCache.get<IUserDocument[]>(cacheKey);
+    if (cachedResults) {
+      return cachedResults;
+    }
     const users: IUserDocument[] | null = await User.find({
       $or: [
         { firstName: { $regex: searchTerm, $options: 'i' } },
@@ -98,6 +125,7 @@ class UserService {
         { userName: { $regex: searchTerm, $options: 'i' } }
       ]
     }).select('firstName lastName avatar userName');
+    await redisCache.set(cacheKey, users, { EX: 60 * 5 });
     return users;
   }
   public async updateMessaageStatus(receiverId: string) {

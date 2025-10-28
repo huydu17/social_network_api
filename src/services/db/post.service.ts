@@ -11,6 +11,7 @@ import { Comment } from 'src/models/comment.schema';
 import { Reaction } from 'src/models/reaction.schema';
 import { Notification } from 'src/models/notification.schema';
 import { Helpers } from 'src/utils/helpers';
+import { redisCache } from '../redis/redis.cache';
 
 class PostService {
   public async create(requestBody: IPostDocument, file: UploadedFile | undefined, currentUser: UserPayload) {
@@ -25,39 +26,59 @@ class PostService {
     }
     await post.save();
     await postCache.savePostToCache({ key: `${post._id}`, post });
+    const timelineCacheKey = `timeline:${currentUser.userId}:page:1`;
+    const profileCacheKey = `user:posts:${currentUser.userId}:page:1`;
+    await redisCache.del([timelineCacheKey, profileCacheKey]);
     const postFormatted = this.PostOuputData(post, currentUser);
     socketPostIO.emit('add-post', postFormatted);
     return post;
   }
   public async getAllPosts(currentUser: UserPayload, page: number, limit: number) {
+    const cacheKey = `timeline:${currentUser.userId}:page:1`;
+    if (page === 1) {
+      const cachedPosts: any = await redisCache.get(cacheKey);
+      console.log('cachedPosts', cachedPosts);
+      if (cachedPosts) {
+        return cachedPosts;
+      }
+    }
     const user: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
     const following = user?.following;
     const usersToFetch: string[] = [...following, currentUser.userId] as string[];
     const normalizedUsersToFetch = usersToFetch.map((user) => user.toString());
-    const cachePost: any = await postCache.getPostsFromCache(page, limit, normalizedUsersToFetch);
-    if (cachePost.posts.length > 0) {
-      return cachePost;
-    }
     const query = { user: { $in: normalizedUsersToFetch } };
     let postsQuery = Post.find(query).populate('user', 'firstName lastName avatar').sort({ createdAt: -1 });
     const totalPosts = await Post.countDocuments(query);
     postsQuery = postsQuery.skip((page - 1) * limit).limit(limit);
     const posts = await postsQuery;
-    return { posts, totalPosts };
+    const result = { posts, totalPosts };
+    if (page === 1 && posts.length > 0) {
+      await redisCache.set(cacheKey, result, { EX: 60 * 5 });
+    }
+    return result;
   }
   public async getUserPosts(userId: string, page: number = 1, limit: number = 10) {
-    const user: IUserDocument = (await userService.getUserById(userId)) as IUserDocument;
-    const cachePost: any = await postCache.getUserPostsFromCache(page, limit, userId);
-    console.log(cachePost);
-    if (cachePost.posts.length > 0) {
-      return cachePost;
+    const cacheKey = `user:posts:${userId}:page:${page}`;
+    if (page === 1) {
+      const cachedPosts: any = await redisCache.get(cacheKey);
+      if (cachedPosts) {
+        return cachedPosts;
+      }
     }
+    const user: IUserDocument = (await userService.getUserById(userId)) as IUserDocument;
     const query = { user: user._id };
     let postsQuery = Post.find(query).populate('user', 'firstName lastName avatar').sort({ createdAt: -1 });
     const totalPosts = await Post.countDocuments(query);
     postsQuery = postsQuery.skip((page - 1) * limit).limit(limit);
     const posts = await postsQuery;
-    return { posts, totalPosts };
+    const result = { posts, totalPosts };
+    if (page === 1 && posts.length > 0) {
+      await redisCache.set(cacheKey, result, { EX: 60 * 5 });
+    }
+    return result;
   }
   public async updatePost(postId: string, data: IPostPayload, currentUser: UserPayload, fileList?: UploadedFile) {
     const postExists = await Post.findById(postId);
@@ -92,22 +113,28 @@ class PostService {
       { new: true }
     );
     await postCache.updatePostFromCache(updatedPost);
+    const timelineCacheKey = `timeline:${currentUser.userId}:page:1`;
+    const profileCacheKey = `user:posts:${currentUser.userId}:page:1`;
+    await redisCache.del([timelineCacheKey, profileCacheKey]);
     const postFormatted = this.PostOuputData(updatedPost, currentUser);
     socketPostIO.emit('update-post', postFormatted);
     return updatedPost;
   }
-
   public async deletePost(postId: string) {
     const postExists = await Post.findById(postId);
     if (!postExists) {
       throw new BadRequestException('Post not found');
     }
+    const postUserId = postExists?.user?.toString();
     const deletePost = Post.findByIdAndDelete(postId);
     const comments = Comment.deleteMany({ postId: postId }).exec();
     const reactions = Reaction.deleteMany({ postId: postId }).exec();
     const notifications = Notification.deleteMany({ entityId: postId }).exec();
     const deletePostFromCache = postCache.deletePostFromCache(postId);
     await Promise.all([deletePost, deletePostFromCache, comments, reactions, notifications]);
+    const timelineCacheKey = `timeline:${postUserId}:page:1`;
+    const profileCacheKey = `user:posts:${postUserId}:page:1`;
+    const deleteListCachePromise = redisCache.del([timelineCacheKey, profileCacheKey]);
     socketPostIO.emit('delete-post', postId);
   }
   private PostOuputData(post: any, currentUser: UserPayload) {

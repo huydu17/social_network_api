@@ -56,7 +56,6 @@ class ChatService {
     const formattedMessage = await this.formatMessage(message, currentUser);
     await chatCache.addChatListToCache(`${currentUser.userId}`, `${receiverId}`, `${conversationObjectId}`);
     await chatCache.addChatListToCache(`${receiverId}`, `${currentUser.userId}`, `${conversationObjectId}`);
-    await chatCache.addChatMessageToCache(`${conversationObjectId}`, message);
     if (receiver.notifications.messages && currentUser.userId !== receiverId) {
       const data: UserReadStatusCache = (await userCache.updateMessageStatusFromCache(
         `${receiverId}`,
@@ -70,20 +69,58 @@ class ChatService {
     return message;
   }
 
-  public async getConversationsList(userId: string): Promise<IMessageDocument[]> {
-    let chatList: IMessageDocument[] = [];
-    const chatListCache: any = await chatCache.getUserConversationList(userId);
-    if (chatListCache.length > 0) {
-      chatList = chatListCache;
-    } else {
-      chatList = await Message.find({
-        $or: [{ senderId: userId }, { receiverId: userId }]
-      })
-        .populate('receiverId', '_id firstName lastName avatar')
-        .sort({ createdAt: 1 });
+  public async getConversationsList(user: UserPayload): Promise<any[]> {
+    const { userId } = user;
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    const lastMessages = await Message.aggregate([
+      { $match: { $or: [{ senderId: userObjectId }, { receiverId: userObjectId }] } },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: '$conversationId',
+          lastMessageDoc: { $first: '$$ROOT' }
+        }
+      },
+      { $replaceRoot: { newRoot: '$lastMessageDoc' } },
+      { $sort: { createdAt: -1 } }
+    ]);
+    if (!lastMessages || lastMessages.length === 0) {
+      return [];
     }
-    return chatList;
+
+    const lastMessageIds = lastMessages.map((msg) => msg._id);
+    const populatedLastMessages = await Message.find({ _id: { $in: lastMessageIds } })
+      .populate('senderId', '_id firstName lastName avatar')
+      .populate('receiverId', '_id firstName lastName avatar')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const conversationList = populatedLastMessages
+      .map((msg: any) => {
+        const isSenderCurrentUser = msg.senderId?._id.toString() === userId.toString();
+        const otherUser = isSenderCurrentUser ? msg.receiverId : msg.senderId;
+        if (!otherUser) {
+          return null;
+        }
+        return {
+          chatItem: {
+            conversationId: msg.conversationId,
+            receiverId: {
+              _id: otherUser._id,
+              firstName: otherUser.firstName,
+              lastName: otherUser.lastName,
+              avatar: otherUser.avatar
+            }
+          },
+          lastMessage: msg
+        };
+      })
+      .filter((item) => item !== null);
+
+    return conversationList;
   }
+
   public async getMessages(senderId: string, receiverId: string): Promise<IMessageDocument[]> {
     const query = {
       $or: [
@@ -91,27 +128,37 @@ class ChatService {
         { senderId: receiverId, receiverId: senderId }
       ]
     };
-    const messageFromCache = await chatCache.getChatMessageFromCache(senderId, receiverId);
-    if (messageFromCache.length > 0) {
-      return messageFromCache;
-    } else {
-      return await Message.find(query).populate('receiverId', '_id firstName lastName avatar').sort({ createdAt: 1 });
-    }
+    return await Message.find(query)
+      .populate('senderId', '_id firstName lastName avatar')
+      .populate('receiverId', '_id firstName lastName avatar')
+      .sort({ createdAt: 1 })
+      .lean();
   }
   public async markMessageAsDeleted(senderId: string, receiverId: string, messageId: string, type: string) {
+    let updateQuery = {};
     if (type === DELETE_TYPE.FOR_ME) {
-      await Message.updateOne({ _id: messageId }, { deleteForMe: true }).exec();
+      updateQuery = { $set: { deleteForMe: true } };
     } else if (type === DELETE_TYPE.FOR_ALL) {
-      await Message.updateOne({ _id: messageId }, { deleteForMe: true, deleteForEveryone: true }).exec();
+      updateQuery = { $set: { deleteForMe: true, deleteForEveryone: true } };
     }
-    const { formattedUpdateMessage, formattedLastMessage }: any = await chatCache.markMessageAsDeleted(
-      senderId,
-      receiverId,
-      messageId,
-      type
-    );
-    socketChatIO.to(formattedUpdateMessage.conversationId.toString()).emit('update-message', formattedUpdateMessage);
-    socketChatIO.emit('chat-list', formattedLastMessage);
+    const updatedMessagePopulated = await Message.findOneAndUpdate(
+      { _id: messageId, $or: [{ senderId }, { receiverId }] },
+      updateQuery,
+      { new: true }
+    )
+      .populate('senderId', '_id firstName lastName avatar')
+      .populate('receiverId', '_id firstName lastName avatar')
+      .lean();
+    if (!updatedMessagePopulated) {
+      throw new BadRequestException('Không tìm thấy tin nhắn');
+    }
+    const lastMessagePopulated = await Message.findOne({ conversationId: updatedMessagePopulated.conversationId })
+      .sort({ createdAt: -1 })
+      .populate('senderId', '_id firstName lastName avatar')
+      .populate('receiverId', '_id firstName lastName avatar')
+      .lean();
+    socketChatIO.to(updatedMessagePopulated.conversationId.toString()).emit('update-message', updatedMessagePopulated);
+    socketChatIO.emit('chat-list', lastMessagePopulated);
   }
 
   public async markMessageAsRead(senderId: string, receiverId: string) {
@@ -121,10 +168,23 @@ class ChatService {
         { senderId: receiverId, receiverId: senderId, isRead: false }
       ]
     };
-    await Message.updateMany(query, { $set: { isRead: true } }).exec();
-    const lastMessage = await chatCache.updateMessageAsRead(senderId, receiverId);
-    socketChatIO.to(lastMessage.conversationId.toString()).emit('update-message', lastMessage);
-    socketChatIO.emit('chat-list', lastMessage);
+    const updateResult = await Message.updateMany(query, { $set: { isRead: true } }).exec();
+    if (updateResult.modifiedCount > 0) {
+      const conversation = await Conversation.findOne({
+        $or: [
+          { senderId, receiverId },
+          { senderId: receiverId, receiverId: senderId }
+        ]
+      });
+      if (!conversation) return;
+      const lastMessagePopulated = await Message.findOne({ conversationId: conversation._id })
+        .sort({ createdAt: -1 })
+        .populate('senderId', '_id firstName lastName avatar')
+        .populate('receiverId', '_id firstName lastName avatar')
+        .lean();
+      socketChatIO.to(lastMessagePopulated!.conversationId.toString()).emit('update-message', lastMessagePopulated);
+      socketChatIO.emit('chat-list', lastMessagePopulated);
+    }
   }
   public async addMessageReaction(
     conversationId: string,
@@ -133,19 +193,18 @@ class ChatService {
     senderReactionId: string,
     type: 'remove' | 'add'
   ) {
-    if (type === 'add') {
-      await Message.updateOne({ _id: messageId }, { reaction: reaction }).exec();
-    } else {
-      await Message.updateOne({ _id: messageId }, { reaction: '' }).exec();
+    const message = await Message.findById(messageId);
+    if (!message) {
+      throw new BadRequestException('Tin nhắn không tồn tại.');
     }
-    const messageReaction = await chatCache.updateMessageReaction(
-      conversationId,
-      messageId,
-      reaction,
-      senderReactionId,
-      type
-    );
-    socketChatIO.to(conversationId).emit('message-reaction', messageReaction);
+    console.log(type);
+    if (type === 'add') {
+      message.reaction = reaction;
+    } else {
+      message.reaction = '';
+    }
+    const messageUpdate = await message.save();
+    socketChatIO.to(conversationId).emit('message-reaction', messageUpdate);
   }
   private async formatMessage(message: IMessageDocument, currentUser: UserPayload) {
     const receiverInfo: IUserDocument = (await userService.getUserById(`${message.receiverId}`)) as IUserDocument;

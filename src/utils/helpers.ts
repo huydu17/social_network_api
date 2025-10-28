@@ -65,6 +65,7 @@ export class Helpers {
   }
   public static formattedNotification(notification: any, currentUser: UserPayload) {
     return {
+      _id: notification._id,
       userTo: notification.userTo,
       userFrom: {
         _id: currentUser.userId.toString(),

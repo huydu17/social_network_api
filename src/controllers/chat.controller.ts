@@ -12,7 +12,7 @@ class ChatController {
     });
   }
   public async getConversationsList(req: Request, res: Response): Promise<void> {
-    const conversations = await chatService.getConversationsList(`${req.currentUser?.userId}`);
+    const conversations = await chatService.getConversationsList(req.currentUser!);
     res.status(200).json({
       message: 'Lấy danh sách cuộc trò chuyện thành công',
       data: conversations

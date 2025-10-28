@@ -13,6 +13,7 @@ import { IPostDocument } from 'src/interfaces/post.interface';
 import { Post } from 'src/models/post.schema';
 import { BadRequestException } from 'src/middlewares/globalErrorHandle';
 import { IUserDocument, UserReadStatusCache } from 'src/interfaces/user.interface';
+import { userService } from './user.service';
 
 class ReactionService {
   public async create(data: IReactionData, currentUser: UserPayload) {
@@ -48,7 +49,7 @@ class ReactionService {
         updatedReact = await Reaction.create([{ type, postId, user: currentUser.userId }], { session });
         updatedReact = updatedReact[0];
       }
-      const updatePost: IPostDocument = (await Post.findByIdAndUpdate(
+      const updatedPost: IPostDocument = (await Post.findByIdAndUpdate(
         postId,
         {
           $inc: {
@@ -58,20 +59,13 @@ class ReactionService {
         },
         { new: true, session }
       )) as IPostDocument;
-
-      if (!updatePost) {
+      if (!updatedPost) {
         throw new BadRequestException('Không tìm thấy bài viết hoặc bài viết đã được cập nhật.');
       }
       await session.commitTransaction();
       try {
-        await reactionCache.savePostReactionToCache(
-          `${postId}`,
-          updatedReact._doc || updatedReact,
-          updatePost?.reactions,
-          type,
-          toEngPrevReaction
-        );
-        const user: IUserDocument = (await userCache.getUserFromCache(`${userTo}`)) as IUserDocument;
+        await reactionCache.updatePostReactionsInCache(`${postId}`, updatedPost.reactions);
+        const user: IUserDocument = (await userService.getUserById(`${userTo}`)) as IUserDocument;
         if (user?.notifications?.reactions && currentUser.userId !== userTo) {
           const notification = await notificationService.create({
             userTo: userTo,
@@ -82,7 +76,7 @@ class ReactionService {
             createdItemId: new mongoose.Types.ObjectId(`${updatedReact._id}`),
             comment: '',
             reaction: type,
-            post: updatePost.text
+            post: updatedPost.text
           });
           const formattedData = Helpers.formattedNotification(notification, currentUser);
           const data: UserReadStatusCache = (await userCache.updateNotificationStatusFromCache(
@@ -93,14 +87,12 @@ class ReactionService {
           socketUserIO?.to(currentUser.userId.toString()).to(userTo.toString()).emit('notification-status', data);
         }
       } catch (postCommitError) {
-        console.error('Thao tác sau khi commit thất bại:', postCommitError);
+        console.error('Error:', postCommitError);
       }
-      return { updatedReact, postReactions: updatePost.reactions };
+      return { updatedReact, postReactions: updatedPost.reactions };
     } catch (error: any) {
-      if (session.inTransaction()) {
-        await session.abortTransaction();
-      }
-      throw new BadRequestException(`Lỗi khi xử lý phản ứng: ${error.message}`);
+      await session.abortTransaction();
+      throw new BadRequestException(`Error: ${error.message}`);
     } finally {
       if (session) {
         await session.endSession();
@@ -138,11 +130,6 @@ class ReactionService {
       }
       await session.commitTransaction();
       try {
-        await reactionCache.removePostReactionFromCache(`${postId}`, `${currentUser.userId}`, updatePost.reactions);
-      } catch (cacheError) {
-        console.error('Thao tác bộ nhớ cache thất bại sau khi xóa phản ứng:', cacheError);
-      }
-      try {
         if (updatePost.user.toString() !== currentUser.userId) {
           await notificationService.deleteNotificationByType({
             userTo: `${updatePost.user}`,
@@ -169,11 +156,14 @@ class ReactionService {
   }
 
   public async getAll(postId: string) {
-    const reactionsFromCache: [IReactionDocument[], number] = await reactionCache.getReactionsFromCache(`${postId}`);
-    const reactions = reactionsFromCache[0].length
-      ? reactionsFromCache[0]
-      : await Reaction.find({ postId }, { createdAt: -1 }).populate('user', 'firstName lastName avatar');
-    return { reactions, count: reactions.length };
+    const post = await Post.findById(postId);
+    if (!post) {
+      throw new BadRequestException('Bài viết không tồn tại hoặc đã bị xóa.');
+    }
+    const reactions = await Reaction.find({ postId })
+      .populate('user', 'firstName lastName avatar')
+      .sort({ createdAt: -1 });
+    return { reactions, count: reactions.length, postReactions: post.reactions };
   }
 }
 

@@ -13,6 +13,8 @@ import { BadRequestException } from 'src/middlewares/globalErrorHandle';
 import { IUserDocument, UserReadStatusCache } from 'src/interfaces/user.interface';
 import { NOTIFICATION_TYPES } from 'src/constants/notification.constant';
 import { Helpers } from 'src/utils/helpers';
+import { redisCache } from '../redis/redis.cache';
+import { userService } from './user.service';
 
 class CommentSerice {
   public async create(data: ICommentData, currentUser: UserPayload) {
@@ -29,10 +31,9 @@ class CommentSerice {
       if (!updatePost) {
         throw new BadRequestException('Post not found');
       }
-      const user: IUserDocument = (await userCache.getUserFromCache(`${userTo}`)) as IUserDocument;
+      const user: IUserDocument = (await userService.getUserById(`${userTo}`)) as IUserDocument;
       await session.commitTransaction();
-      session.endSession();
-      await commentCache.saveCommentToCache(`${postId}`, JSON.stringify(comment._doc));
+      await commentCache.incrementCommentCountInPostCache(`${postId}`);
       if (user.notifications.comments && currentUser.userId !== userTo) {
         const notification = await notificationService.create({
           userTo: userTo,
@@ -56,15 +57,31 @@ class CommentSerice {
       return comment;
     } catch (error: any) {
       await session.abortTransaction();
-      session.endSession();
       throw new BadRequestException(`Error processing comment: ${error.message}`);
+    } finally {
+      session.endSession();
     }
   }
   public async getPostComments(postId: string) {
-    const commentFromCache = await commentCache.getCommentsFromCache(`${postId}`);
-    return commentFromCache.length > 0
-      ? commentFromCache
-      : await Comment.find({ postId }).populate('user', 'firstName lastName avatar');
+    return await Comment.find({ postId }).populate('user', 'firstName lastName avatar');
+  }
+  public async deleteComment(commentId: string, postId: string) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      const deletedComment = await Comment.findByIdAndDelete(commentId, { session });
+      if (!deletedComment) {
+        throw new BadRequestException('Comment not found');
+      }
+      await Post.findByIdAndUpdate(postId, { $inc: { commentsCount: -1 } }, { session });
+      await session.commitTransaction();
+      await commentCache.decrementCommentCountInPostCache(postId);
+    } catch (error: any) {
+      await session.abortTransaction();
+      throw new BadRequestException(`Error deleting comment: ${error.message}`);
+    } finally {
+      session.endSession();
+    }
   }
 }
 export const commentService: CommentSerice = new CommentSerice();

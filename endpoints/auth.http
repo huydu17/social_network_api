@@ -7,14 +7,14 @@ Content-Type: application/json
 Accept: application/json
 
 {
-"firstName": "Lý Thị",
-        "lastName": "Thư",
-        "email": "lythithu@gmail.com",
-        "password": "123123123",
-        "bYear": "2004",
-        "bMonth": "12",
-        "bDay": "03",
-        "gender": "Nữ"
+    "firstName": "Lý Thị",
+    "lastName": "Thư",
+    "email": "lythithu@gmail.com",
+    "password": "123123123",
+    "bYear": "2004",
+    "bMonth": "12",
+    "bDay": "03",
+    "gender": "Nữ"
 }
 
 ### LOGIN
@@ -23,8 +23,8 @@ Content-Type: application/json
 Accept: application/json
 
 {
-    "emailOrUsername":"",
-    "password":""
+    "emailOrUsername":"messipro123@gmail.com",
+    "password":"123123123"
 }
 
 

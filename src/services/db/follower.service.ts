@@ -10,6 +10,7 @@ import { IDeleteByType } from 'src/interfaces/notification.interface';
 import { Helpers } from 'src/utils/helpers';
 import { socketNotificationIO } from '../sockets/notification.socket';
 import { socketUserIO } from '../sockets/user.socket';
+import { redisCache } from '../redis/redis.cache';
 
 class FollowerService {
   public async addFriend(userId: string, currentUser: UserPayload) {
@@ -46,6 +47,11 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${receiver._id}`, 'follower', 'add', `${sender._id}`),
         userCache.updateRelationsUserCache(`${sender._id}`, 'following', 'add', `${receiver._id}`)
       ]);
+      await redisCache.del([
+        `user:list:${receiver._id}:requests:page:1`,
+        `user:list:${receiver._id}:follower:page:1`,
+        `user:list:${sender._id}:following:page:1`
+      ]);
       const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
       return updatedSender;
     } else {
@@ -78,6 +84,11 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${receiver._id}`, 'requests', 'remove', `${sender._id}`),
         userCache.updateRelationsUserCache(`${receiver._id}`, 'follower', 'remove', `${sender._id}`),
         userCache.updateRelationsUserCache(`${sender._id}`, 'following', 'remove', `${receiver._id}`)
+      ]);
+      await redisCache.del([
+        `user:list:${receiver._id}:requests:page:1`,
+        `user:list:${receiver._id}:follower:page:1`,
+        `user:list:${sender._id}:following:page:1`
       ]);
       const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
       return updatedSender;
@@ -122,6 +133,7 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${sender._id}`, 'following', 'add', `${receiver._id}`),
         userCache.updateRelationsUserCache(`${receiver._id}`, 'follower', 'add', `${sender._id}`)
       ]);
+      await redisCache.del([`user:list:${sender._id}:following:page:1`, `user:list:${receiver._id}:follower:page:1`]);
       const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
       return updatedSender;
     } else {
@@ -151,6 +163,7 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${sender._id}`, 'following', 'remove', `${receiver._id}`),
         userCache.updateRelationsUserCache(`${receiver._id}`, 'follower', 'remove', `${sender._id}`)
       ]);
+      await redisCache.del([`user:list:${sender._id}:following:page:1`, `user:list:${receiver._id}:follower:page:1`]);
       const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
       return updatedSender;
     } else {
@@ -195,6 +208,11 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${receiver._id}`, 'friends', 'add', `${sender._id}`),
         userCache.updateRelationsUserCache(`${receiver._id}`, 'requests', 'remove', `${sender._id}`)
       ]);
+      await redisCache.del([
+        `user:list:${sender._id}:friends:page:1`,
+        `user:list:${receiver._id}:friends:page:1`,
+        `user:list:${receiver._id}:requests:page:1`
+      ]);
       const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
       return updatedSender;
     } else if (!receiver.requests.includes(sender._id.toString())) {
@@ -222,6 +240,12 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${receiver._id}`, 'friends', 'remove', `${sender._id}`),
         userCache.updateRelationsUserCache(`${receiver._id}`, 'follower', 'remove', `${sender._id}`)
       ]);
+      await redisCache.del([
+        `user:list:${sender._id}:friends:page:1`,
+        `user:list:${sender._id}:following:page:1`,
+        `user:list:${receiver._id}:friends:page:1`,
+        `user:list:${receiver._id}:follower:page:1`
+      ]);
       const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
       return updatedSender;
     } else {
@@ -242,6 +266,11 @@ class FollowerService {
         userCache.updateRelationsUserCache(`${sender._id}`, 'following', 'remove', `${receiver._id}`),
         userCache.updateRelationsUserCache(`${receiver._id}`, 'follower', 'remove', `${sender._id}`),
         userCache.updateRelationsUserCache(`${receiver._id}`, 'requests', 'remove', `${sender._id}`)
+      ]);
+      await redisCache.del([
+        `user:list:${sender._id}:following:page:1`,
+        `user:list:${receiver._id}:follower:page:1`,
+        `user:list:${receiver._id}:requests:page:1`
       ]);
       const updatedSender: IUserDocument = (await userService.getUserById(`${currentUser.userId}`)) as IUserDocument;
       return updatedSender;
